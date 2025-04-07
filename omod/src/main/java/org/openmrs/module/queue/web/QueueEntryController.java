@@ -17,17 +17,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.module.queue.api.QueueServicesWrapper;
+import org.openmrs.module.queue.api.dto.QueueEntryDto;
 import org.openmrs.module.queue.api.search.QueueEntrySearchCriteria;
-import org.openmrs.module.queue.model.QueueEntry;
 import org.openmrs.module.queue.web.resources.parser.QueueEntrySearchCriteriaParser;
 import org.openmrs.module.webservices.rest.SimpleObject;
-import org.openmrs.module.webservices.rest.web.ConversionUtil;
 import org.openmrs.module.webservices.rest.web.Hyperlink;
 import org.openmrs.module.webservices.rest.web.RequestContext;
 import org.openmrs.module.webservices.rest.web.RestConstants;
 import org.openmrs.module.webservices.rest.web.RestUtil;
 import org.openmrs.module.webservices.rest.web.representation.CustomRepresentation;
-import org.openmrs.module.webservices.rest.web.representation.Representation;
 import org.openmrs.module.webservices.rest.web.resource.impl.BasePageableResult;
 import org.openmrs.module.webservices.rest.web.resource.impl.NeedsPaging;
 import org.openmrs.module.webservices.rest.web.v1_0.controller.BaseRestController;
@@ -55,23 +53,27 @@ public class QueueEntryController extends BaseRestController {
 	@RequestMapping(method = { RequestMethod.GET })
 	@ResponseBody
 	public Object getQueueEntries(HttpServletRequest request, HttpServletResponse response) {
-		
-		CustomRepresentation customRepresentation = new CustomRepresentation(
-		        "uuid,display,queue,status:REF,patient:(uuid,display,person:REF),visit:REF,priority,priorityComment,sortWeight,startedAt,endedAt,locationWaitingFor,queueComingFrom,providerWaitingFor");
-		
+		CustomRepresentation customRepresentation = new CustomRepresentation("uuid");
 		RequestContext context = RestUtil.getRequestContext(request, response, customRepresentation);
 		System.out.println(context.getRepresentation() + customRepresentation.getRepresentation());
 		Map<String, String[]> parameters = context.getRequest().getParameterMap();
 		QueueEntrySearchCriteria criteria = queueEntrySearchCriteriaParser.constructFromRequest(parameters);
-		List<QueueEntry> queueEntries = services.getQueueEntryService().getQueueEntries(criteria);
-		BasePageableResult<QueueEntry> pageableResult = new NeedsPaging<>(queueEntries, context);
+		List<QueueEntryDto> queueEntries = services.getQueueEntryService().getRequiredQueueEntries(criteria);
+		BasePageableResult<QueueEntryDto> pageableResult = new NeedsPaging<>(queueEntries, context);
 		List<Object> results = new ArrayList<Object>();
-		for (QueueEntry queueEntry : pageableResult.getPageOfResults()) {
-			SimpleObject simpleObject = (SimpleObject) ConversionUtil.convertToRepresentation(queueEntry,
-			    context.getRepresentation());
-			QueueEntry prevQueueEntry = services.getQueueEntryService().getPreviousQueueEntry(queueEntry);
-			simpleObject.add("previousQueueEntry",
-			    ConversionUtil.convertToRepresentation(prevQueueEntry, Representation.REF));
+		for (QueueEntryDto queueEntry : pageableResult.getPageOfResults()) {
+			SimpleObject simpleObject = new SimpleObject();
+			simpleObject.add("uuid", queueEntry.getUuid());
+			simpleObject.add("startedAt", queueEntry.getStartedAt());
+			SimpleObject patientObject = new SimpleObject();
+			patientObject.add("givenName", queueEntry.getPatientGivenName());
+			patientObject.add("familyName", queueEntry.getPatientFamilyName());
+			patientObject.add("uuid", queueEntry.getPatientUuid());
+			simpleObject.add("patient", patientObject);
+			SimpleObject locationObject = new SimpleObject();
+			locationObject.add("uuid", queueEntry.getLocationUuid());
+			locationObject.add("locationName", queueEntry.getLocationName());
+			simpleObject.add("location", locationObject);
 			results.add(simpleObject);
 		}
 		SimpleObject ret = new SimpleObject().add("results", results);

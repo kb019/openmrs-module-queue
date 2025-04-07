@@ -19,6 +19,7 @@ import org.openmrs.Visit;
 import org.openmrs.VisitAttributeType;
 import org.openmrs.annotation.Authorized;
 import org.openmrs.api.APIException;
+import org.openmrs.module.queue.api.dto.QueueEntryDto;
 import org.openmrs.module.queue.api.search.QueueEntrySearchCriteria;
 import org.openmrs.module.queue.api.sort.SortWeightGenerator;
 import org.openmrs.module.queue.model.Queue;
@@ -101,6 +102,9 @@ public interface QueueEntryService {
 	 */
 	@Authorized({ PrivilegeConstants.GET_QUEUE_ENTRIES })
 	List<QueueEntry> getQueueEntries(@NotNull QueueEntrySearchCriteria searchCriteria);
+	
+	@Authorized({ PrivilegeConstants.GET_QUEUE_ENTRIES })
+	public List<QueueEntryDto> getRequiredQueueEntries(QueueEntrySearchCriteria searchCriteria);
 	
 	/**
 	 * @return {@link Long} count of queue entries that match the given

@@ -16,7 +16,9 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.transform.AliasToBeanResultTransformer;
 import org.openmrs.module.queue.api.dao.QueueEntryDao;
+import org.openmrs.module.queue.api.dto.QueueEntryDto;
 import org.openmrs.module.queue.api.search.QueueEntrySearchCriteria;
 import org.openmrs.module.queue.model.QueueEntry;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,6 +41,26 @@ public class QueueEntryDaoImpl extends AbstractBaseQueueDaoImpl<QueueEntry> impl
 	}
 	
 	@Override
+	public List<QueueEntryDto> getRequiredQueueEntries(QueueEntrySearchCriteria searchCriteria) {
+		Criteria c = createCriteriaFromSearchCriteria(searchCriteria);
+		c.add(Restrictions.eq("pname.preferred", true));
+		c.addOrder(Order.desc("qe.sortWeight"));
+		c.addOrder(Order.asc("qe.startedAt"));
+		c.addOrder(Order.asc("qe.dateCreated"));
+		c.addOrder(Order.asc("qe.queueEntryId"));
+		c.setProjection(Projections.projectionList().add(Projections.property("qe.uuid"), "uuid")
+		        .add(Projections.property("p.gender"), "patientGender").add(Projections.property("p.uuid"), "patientUuid")
+		        .add(Projections.property("pname.givenName"), "patientGivenName")
+		        .add(Projections.property("pname.middleName"), "patientMiddleName")
+		        .add(Projections.property("pname.familyName"), "patientFamilyName")
+		        .add(Projections.property("pname.prefix"), "patientPrefix")
+		        .add(Projections.property("l.name"), "locationName").add(Projections.property("l.uuid"), "locationUuid")
+		        .add(Projections.property("qe.startedAt"), "startedAt"));
+		c.setResultTransformer(new AliasToBeanResultTransformer(QueueEntryDto.class));
+		return c.list();
+	}
+	
+	@Override
 	public Long getCountOfQueueEntries(QueueEntrySearchCriteria searchCriteria) {
 		Criteria criteria = createCriteriaFromSearchCriteria(searchCriteria);
 		criteria.setProjection(Projections.rowCount());
@@ -51,6 +73,9 @@ public class QueueEntryDaoImpl extends AbstractBaseQueueDaoImpl<QueueEntry> impl
 	private Criteria createCriteriaFromSearchCriteria(QueueEntrySearchCriteria searchCriteria) {
 		Criteria c = getCurrentSession().createCriteria(QueueEntry.class, "qe");
 		c.createAlias("queue", "q");
+		c.createAlias("patient", "p");
+		c.createAlias("p.names", "pname");
+		c.createAlias("q.location", "l");
 		includeVoidedObjects(c, searchCriteria.isIncludedVoided());
 		limitByCollectionProperty(c, "queue", searchCriteria.getQueues());
 		limitByCollectionProperty(c, "q.location", searchCriteria.getLocations());

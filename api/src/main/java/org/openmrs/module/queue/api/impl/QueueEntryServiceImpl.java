@@ -38,6 +38,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.queue.api.QueueEntryService;
 import org.openmrs.module.queue.api.dao.QueueEntryDao;
+import org.openmrs.module.queue.api.dto.QueueEntryDto;
 import org.openmrs.module.queue.api.search.QueueEntrySearchCriteria;
 import org.openmrs.module.queue.api.sort.SortWeightGenerator;
 import org.openmrs.module.queue.exception.DuplicateQueueEntryException;
@@ -182,6 +183,12 @@ public class QueueEntryServiceImpl extends BaseOpenmrsService implements QueueEn
 	@Transactional(readOnly = true)
 	public List<QueueEntry> getQueueEntries(QueueEntrySearchCriteria searchCriteria) {
 		return dao.getQueueEntries(searchCriteria);
+	}
+	
+	@Override
+	@Transactional(readOnly = true)
+	public List<QueueEntryDto> getRequiredQueueEntries(QueueEntrySearchCriteria searchCriteria) {
+		return dao.getRequiredQueueEntries(searchCriteria);
 	}
 	
 	@Override

@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.openmrs.Auditable;
 import org.openmrs.OpenmrsObject;
+import org.openmrs.module.queue.api.dto.QueueEntryDto;
 import org.openmrs.module.queue.api.search.QueueEntrySearchCriteria;
 import org.openmrs.module.queue.model.QueueEntry;
 
@@ -30,5 +31,7 @@ public interface QueueEntryDao<Q extends OpenmrsObject & Auditable> extends Base
 	 *         %{@link QueueEntrySearchCriteria}
 	 */
 	Long getCountOfQueueEntries(@NotNull QueueEntrySearchCriteria searchCriteria);
+	
+	List<QueueEntryDto> getRequiredQueueEntries(QueueEntrySearchCriteria searchCriteria);
 	
 }
